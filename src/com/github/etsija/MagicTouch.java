@@ -99,23 +99,19 @@ public class MagicTouch extends JavaPlugin {
 					}
 				}
 				
-				// Log your change with LogBlock
-				if (useLB) {
-					int typeAfter = 0;
-					byte dataAfter = 0;
-					lbConsumer.queueBlockReplace(player.getName(), block.getState(), typeAfter, dataAfter);
-				}
-				
 				//_log.info("Type = " + material);
 				
 				// ----------------------------------------------------------------------
 				// Main loop for different clickable materials
 				// ----------------------------------------------------------------------
 				
+				Boolean validBlock = false;
+				
 				// LOGS:
 				// U/D -> E/W -> N/S -> U/D...
 				if (rotateLogs && 
 				   (material == Material.LOG)) {
+					validBlock = true;
 					byte data = block.getData();
 					if (data < 4) {
 						block.setData((byte)(data + 4));
@@ -138,6 +134,7 @@ public class MagicTouch extends JavaPlugin {
 						  (material == Material.SANDSTONE_STAIRS) ||
 						  (material == Material.BRICK_STAIRS) ||
 						  (material == Material.NETHER_BRICK_STAIRS))) {
+					validBlock = true;
 					byte data = block.getData();
                     int flipStatus = (data & 0x4) >> 2; // Save bit 3 (0x3)
 					int orientation = data & 0x3;
@@ -170,6 +167,7 @@ public class MagicTouch extends JavaPlugin {
 				} else if (rotatePistons && (
 						  (material == Material.PISTON_BASE) ||
 						  (material == Material.PISTON_STICKY_BASE))) {
+					validBlock = true;
 					byte data = block.getData();
 					int isExtended = (data & 0x8) >> 3; // Save bit 4 (0x8) = extension status
 					int orientation = data & 0x7;
@@ -204,6 +202,7 @@ public class MagicTouch extends JavaPlugin {
 						  (material == Material.ENDER_CHEST) ||
 						  (material == Material.FURNACE) ||
 						  (material == Material.DISPENSER))) {
+					validBlock = true;
 					byte data = block.getData();
 					switch (data) {
 						case 2:
@@ -223,12 +222,21 @@ public class MagicTouch extends JavaPlugin {
 				// SLABS:
 				// right-side up -> upside down -> ...
 				} else if (rotateSlabs && (material == Material.STEP)) {
+					validBlock = true;
 					byte data = block.getData();
 					if (data < 8) {
 						block.setData((byte)(data + 8));
 					} else {
 	                    block.setData((byte)(data - 8));
 	                }
+				}
+				
+				// LogBlock logging in use and Player has clicked a valid block to rotate
+				// so log your change with LogBlock
+				if (validBlock && useLB) {
+					int typeAfter = 0;
+					byte dataAfter = 0;
+					lbConsumer.queueBlockReplace(player.getName(), block.getState(), typeAfter, dataAfter);
 				}
 			}
 		}
