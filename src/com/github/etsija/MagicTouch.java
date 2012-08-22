@@ -43,6 +43,8 @@ public class MagicTouch extends JavaPlugin {
 	// This is the listener which listens to right-click of the chosen tool
 	public class pListener implements Listener {
 
+		private boolean shiftClick = false;
+		
 		@EventHandler
 		public void onPlayerInteract(PlayerInteractEvent event) {
 			
@@ -57,7 +59,11 @@ public class MagicTouch extends JavaPlugin {
 			// Main loop to handle left-clicking with the magic tool
 			Player player = event.getPlayer();
 			int itemInHand = player.getItemInHand().getTypeId();
+			
 			if (itemInHand == 58) {
+				
+				// Did the player shift-click?
+				shiftClick = player.isSneaking();
 				
 				Block block = event.getClickedBlock();
 				Material material = block.getType();
@@ -70,9 +76,12 @@ public class MagicTouch extends JavaPlugin {
 				
 				//_log.info("Type = " + material);
 				
-				// Main loop where different clicking actions could be put
+				// ----------------------------------------------------------------------
+				// Main loop for different clickable materials
+				// ----------------------------------------------------------------------
 				
-				// Flip logs: U/D -> E/W -> N/S -> U/D...
+				// LOGS:
+				// U/D -> E/W -> N/S -> U/D...
 				if (material == Material.LOG) {
 					byte data = block.getData();
 					if (data < 4) {
@@ -83,9 +92,9 @@ public class MagicTouch extends JavaPlugin {
 	                    block.setData((byte)(data - 8));
 	                }
 					
-				// Flip stairs so they are ascending to
-				//      normal: N(3) -> E(0) -> S(2) -> W(1) -> 
-				// upside down: N(7) -> E(4) -> S(6) -> W(5) -> normal N(3)...
+				// STAIRS: 
+				// N(3) -> E(0) -> S(2) -> W(1) -> N(3)...
+				// With shift-click, flip stairs upside down
 				} else if ((material == Material.WOOD_STAIRS) ||
 						   (material == Material.SPRUCE_WOOD_STAIRS) ||
 						   (material == Material.BIRCH_WOOD_STAIRS) ||
@@ -96,40 +105,40 @@ public class MagicTouch extends JavaPlugin {
 						   (material == Material.BRICK_STAIRS) ||
 						   (material == Material.NETHER_BRICK_STAIRS)) {
 					byte data = block.getData();
-					switch (data) {
-						case 3: // 
-							block.setData((byte) 0);
-							break;
-						case 0:
-							block.setData((byte) 2);
-							break;
-						case 2:
-							block.setData((byte) 1);
-							break;
-						case 1:
-							block.setData((byte) 7);
-							break;
-						case 7:
-							block.setData((byte) 4);
-							break;
-						case 4:
-							block.setData((byte) 6);
-							break;
-						case 6:
-							block.setData((byte) 5);
-							break;
-						case 5:
-							block.setData((byte) 3);
-							break;
-					}
-				
-				// Flip pistons: N(2) -> E(5) -> S(3) -> W(4) -> U(1) -> D(0) -> N(2)...
-				//} else if ((material == Material.PISTON_BASE) ||
-				//		   (material == Material.PISTON_STICKY_BASE)) {
-				} else if (false) {
+                    int flipStatus = (data & 0x4) >> 2; // Save bit 3 (0x3)
+					int orientation = data & 0x3;
+                    if (shiftClick) {
+                        // Flip the block upside down
+                        flipStatus = ~flipStatus;
+                    } else {
+                    	// Rotate the block
+                        switch (orientation) {
+                            case 3:
+                                orientation = 0;
+                                break;
+                            case 0:
+                                orientation = 2;
+                                break;
+                            case 2:
+                                orientation = 1;
+                                break;
+                            case 1:
+                                orientation = 3;
+                                break;
+                        }
+                    }
+                    // Combine flipStatus (bit 3) and orientation (bits 2-0)
+                    data = (byte) ((flipStatus << 2) | orientation);
+					block.setData(data);
+
+/* Disabled for now
+				// PISTONS:
+				// N(2) -> E(5) -> S(3) -> W(4) -> U(1) -> D(0) -> N(2)...
+				} else if ((material == Material.PISTON_BASE) ||
+						   (material == Material.PISTON_STICKY_BASE)) {
 					byte data = block.getData();
-					int isExtended = data & 8; // Save bit 4 (0x8) = extension status
-					int orientation = data & 7;
+					int isExtended = (data & 0x8) >> 3; // Save bit 4 (0x8) = extension status
+					int orientation = data & 0x7;
 					switch (orientation) {
 						case 2:
 							orientation = 5;
@@ -150,17 +159,19 @@ public class MagicTouch extends JavaPlugin {
 							orientation = 2;
 							break;
 					}
-					data = (byte) (isExtended | orientation);
+					// Combine extension status (bit 4) and orientation (bits 3-0)
+					data = (byte) ((isExtended << 3) | orientation);
 					block.setData(data);
-					
-				// Flip chests, furnaces, dispensers: N(2) -> E(5) -> S(3) -> W(4) -> N(2)...
+*/					
+				// CHESTS, FURNACES, DISPENSERS:
+				// N(2) -> E(5) -> S(3) -> W(4) -> N(2)...
 				} else if ((material == Material.CHEST) ||
 						   (material == Material.ENDER_CHEST) ||
 						   (material == Material.FURNACE) ||
 						   (material == Material.DISPENSER)) {
 					byte data = block.getData();
 					switch (data) {
-						case 2: // 
+						case 2:
 							block.setData((byte) 5);
 							break;
 						case 5:
@@ -174,7 +185,8 @@ public class MagicTouch extends JavaPlugin {
 							break;
 					}
 				
-				// Flip slabs: right-side up -> upside down -> ...
+				// SLABS:
+				// right-side up -> upside down -> ...
 				} else if (material == Material.STEP) {
 					byte data = block.getData();
 					if (data < 8) {
