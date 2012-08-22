@@ -2,6 +2,7 @@ package com.github.etsija;
 
 import java.util.logging.Logger;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.PluginManager;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -12,11 +13,13 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
-
+import de.diddiz.LogBlock.Consumer;
+import de.diddiz.LogBlock.LogBlock;
 
 public class MagicTouch extends JavaPlugin {
 
 	private Logger _log = Logger.getLogger("Minecraft");
+	private Consumer lbConsumer = null;
 	
 	// Connect to WG plugin to respect build-restricted areas
 	private WorldGuardPlugin getWorldGuard() {
@@ -33,15 +36,21 @@ public class MagicTouch extends JavaPlugin {
 	public void onEnable(){
 		// Register the listener for the tool to use
 		getServer().getPluginManager().registerEvents(new pListener(), this);
+		final PluginManager pm = getServer().getPluginManager();
+		final Plugin plugin = pm.getPlugin("LogBlock");
+		if (plugin != null) {
+			lbConsumer = ((LogBlock)plugin).getConsumer();
+			_log.info("[MagicTouch] hooked into LogBlock");
+		}
 		
 		// Create a default config.yml if one does not exist
 		saveDefaultConfig();
 		
-		_log.info("[MagicTouch] Has been enabled!");
+		_log.info("[MagicTouch] has been enabled!");
 	}
 	 
 	public void onDisable(){ 
-		_log.info("[MagicTouch] Has been disabled!");
+		_log.info("[MagicTouch] has been disabled!");
 	}
 
 	// This is the listener which listens to right-click of the chosen tool
@@ -88,6 +97,13 @@ public class MagicTouch extends JavaPlugin {
 						player.sendMessage(ChatColor.RED + "[MagicTouch] You cannot build in this area!");
 						return;
 					}
+				}
+				
+				// Log your change with LogBlock
+				if (useLB) {
+					int typeAfter = 0;
+					byte dataAfter = 0;
+					lbConsumer.queueBlockReplace(player.getName(), block.getState(), typeAfter, dataAfter);
 				}
 				
 				//_log.info("Type = " + material);
