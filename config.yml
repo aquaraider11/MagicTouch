@@ -1,10 +1,12 @@
 general:
   # ID of the Magic Tool (default: Workbench = 58)
-  magictool: 58
+  magicaltool: 58
   # Use WorldGuard to prevent rotating blocks in restricted areas
   use_worldguard: yes
   # Use LogBlock to record your changes
   use_logblock: yes
+  # Print debug messages to console
+  debug: yes
 blocks:
   # Logs
   logs: yes
@@ -16,3 +18,5 @@ blocks:
   chests: yes
   # Slabs
   slabs: yes
+  # Diodes (repeaters)
+  diodes: yes

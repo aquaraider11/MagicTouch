@@ -1,15 +1,21 @@
 package com.github.etsija;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.logging.Logger;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.block.BlockDamageEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
@@ -21,21 +27,48 @@ public class MagicTouch extends JavaPlugin {
 	private Logger _log = Logger.getLogger("Minecraft");
 	private Consumer lbConsumer = null;
 	
+	// Params in config.yml
+	private int magicalTool;
+	private Boolean useWG;
+	private Boolean useLB;
+	private Boolean debug;
+	private Boolean rotateLogs;
+	private Boolean rotateStairs;
+	private Boolean rotatePistons;
+	private Boolean rotateChests;
+	private Boolean rotateSlabs;
+	private Boolean rotateDiodes;
+	
 	// Connect to WG plugin to respect build-restricted areas
 	private WorldGuardPlugin getWorldGuard() {
 		Plugin plugin = getServer().getPluginManager().getPlugin("WorldGuard");
-	 
 		// WorldGuard may not be loaded
 		if (plugin == null || !(plugin instanceof WorldGuardPlugin)) {
 			return null; // Maybe you want throw an exception instead
 		}
-	 
 		return (WorldGuardPlugin) plugin;
 	}
 	
-	public void onEnable(){
+	public void onEnable() {
 		// Register the listener for the tool to use
 		getServer().getPluginManager().registerEvents(new pListener(), this);
+		// Register the block listener which cancels block damage when clicking
+		getServer().getPluginManager().registerEvents(new bListener(), this);
+		
+		// Config parameters
+		processConfigFile();
+
+		magicalTool = getConfig().getInt("general.magicaltool");
+		useWG = getConfig().getBoolean("general.use_worldguard");
+		useLB = getConfig().getBoolean("general.use_logblock");
+		debug = getConfig().getBoolean("general.debug");
+		rotateLogs = getConfig().getBoolean("blocks.logs");
+		rotateStairs = getConfig().getBoolean("blocks.stairs");
+		rotatePistons = getConfig().getBoolean("blocks.pistons");
+		rotateChests = getConfig().getBoolean("blocks.chests");
+		rotateSlabs = getConfig().getBoolean("blocks.slabs");
+		rotateDiodes = getConfig().getBoolean("blocks.diodes");
+		
 		final PluginManager pm = getServer().getPluginManager();
 		final Plugin plugin = pm.getPlugin("LogBlock");
 		if (plugin != null) {
@@ -43,35 +76,75 @@ public class MagicTouch extends JavaPlugin {
 			_log.info("[MagicTouch] hooked into LogBlock");
 		}
 		
-		// Create a default config.yml if one does not exist
-		saveDefaultConfig();
-		
 		_log.info("[MagicTouch] has been enabled!");
 	}
 	 
-	public void onDisable(){ 
+	public void onDisable() { 
 		_log.info("[MagicTouch] has been disabled!");
 	}
 
+	public void processConfigFile() {
+
+		FileConfiguration config = this.getConfig();
+		final Map<String, Object> defParams = new HashMap<String, Object>();
+		
+		//_log.info("config = " + config.getKeys(true));
+		
+		// Create a default config.yml if one does not exist
+		
+		// These are the defaults
+		defParams.put("general.magicaltool", 58);
+		defParams.put("general.use_worldguard", "yes");
+		defParams.put("general.use_logblock", "yes");
+		defParams.put("general.debug", "yes");
+		defParams.put("blocks.logs", "yes");
+		defParams.put("blocks.stairs", "yes");
+		defParams.put("blocks.pistons", "yes");
+		defParams.put("blocks.chests", "yes");
+		defParams.put("blocks.slabs", "yes");
+		defParams.put("blocks.diodes", "yes");
+		defParams.put("general.testiparametri", 1);
+		
+		for (final Entry<String, Object> e : defParams.entrySet())
+			if (!config.contains(e.getKey()))
+				config.addDefault(e.getKey(), e.getValue());
+		
+		// Add defaults for any params that don't exist in (existing) config.yml <<<=== THIS DOESN'T WORK
+		config.options().copyDefaults(true);
+		this.saveDefaultConfig();
+	}
+	
+	// This is the block listener which cancels block damage when clicking with the magical tool
+	public class bListener implements Listener {
+
+		private int magicalTool = getConfig().getInt("general.magicaltool");
+		
+		@EventHandler
+		public void onBlockDamage(BlockDamageEvent event) {
+			
+			if (event.isCancelled()) return;
+			
+			Player player = event.getPlayer();
+			// Block block = event.getBlock();
+			int itemInHand = player.getItemInHand().getTypeId();
+			
+			if (itemInHand == magicalTool) {
+				event.setCancelled(true);
+			}
+		}
+	}
+	
 	// This is the listener which listens to right-click of the chosen tool
 	public class pListener implements Listener {
 
 		private boolean shiftClick = false;
 		
 		// Read configuration params from config.yml
-		private int magicTool = getConfig().getInt("general.magictool");
-		private Boolean useWG = getConfig().getBoolean("general.use_worldguard");
-		private Boolean useLB = getConfig().getBoolean("general.use_logblock");
-		private Boolean rotateLogs = getConfig().getBoolean("blocks.logs");
-		private Boolean rotateStairs = getConfig().getBoolean("blocks.stairs");
-		private Boolean rotatePistons = getConfig().getBoolean("blocks.pistons");
-		private Boolean rotateChests = getConfig().getBoolean("blocks.chests");
-		private Boolean rotateSlabs = getConfig().getBoolean("blocks.slabs");
-		
+
 		@EventHandler
 		public void onPlayerInteract(PlayerInteractEvent event) {
 			
-			if(event.isCancelled()) return;
+			if (event.isCancelled()) return;
 			
 			// Only left-click does something
 			final Action action = event.getAction();
@@ -83,7 +156,7 @@ public class MagicTouch extends JavaPlugin {
 			Player player = event.getPlayer();
 			int itemInHand = player.getItemInHand().getTypeId();
 			
-			if (itemInHand == magicTool) {
+			if (itemInHand == magicalTool) {
 				
 				// Did the player shift-click?
 				shiftClick = player.isSneaking();
@@ -99,7 +172,8 @@ public class MagicTouch extends JavaPlugin {
 					}
 				}
 				
-				//_log.info("Type = " + material);
+				if (debug)
+					_log.info("Type = " + material);
 				
 				// ----------------------------------------------------------------------
 				// Main loop for different clickable materials
@@ -229,7 +303,16 @@ public class MagicTouch extends JavaPlugin {
 					} else {
 	                    block.setData((byte)(data - 8));
 	                }
-				}
+
+				// DIODES:
+				// N(0) -> E(1) -> S(2) -> W(3) -> N(0)...
+				} else if (rotateDiodes && (
+						  (material == Material.DIODE_BLOCK_OFF) ||
+						  (material == Material.DIODE_BLOCK_OFF))) {
+					validBlock = true;
+					byte data = block.getData();
+					block.setData((byte)((data + 1) % 4));
+				}				
 				
 				// LogBlock logging in use and Player has clicked a valid block to rotate
 				// so log your change with LogBlock
