@@ -9,10 +9,10 @@ import org.bukkit.plugin.PluginManager;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
-import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockDamageEvent;
@@ -55,19 +55,8 @@ public class MagicTouch extends JavaPlugin {
 		// Register the block listener which cancels block damage when clicking
 		getServer().getPluginManager().registerEvents(new bListener(), this);
 		
-		// Config parameters
+		// Configure the plugin
 		processConfigFile();
-
-		magicalTool = getConfig().getInt("general.magicaltool");
-		useWG = getConfig().getBoolean("general.use_worldguard");
-		useLB = getConfig().getBoolean("general.use_logblock");
-		debug = getConfig().getBoolean("general.debug");
-		rotateLogs = getConfig().getBoolean("blocks.logs");
-		rotateStairs = getConfig().getBoolean("blocks.stairs");
-		rotatePistons = getConfig().getBoolean("blocks.pistons");
-		rotateChests = getConfig().getBoolean("blocks.chests");
-		rotateSlabs = getConfig().getBoolean("blocks.slabs");
-		rotateDiodes = getConfig().getBoolean("blocks.diodes");
 		
 		final PluginManager pm = getServer().getPluginManager();
 		final Plugin plugin = pm.getPlugin("LogBlock");
@@ -85,33 +74,40 @@ public class MagicTouch extends JavaPlugin {
 
 	public void processConfigFile() {
 
-		FileConfiguration config = this.getConfig();
 		final Map<String, Object> defParams = new HashMap<String, Object>();
+		FileConfiguration config = this.getConfig();
+		config.options().copyDefaults(true);
 		
-		//_log.info("config = " + config.getKeys(true));
-		
-		// Create a default config.yml if one does not exist
-		
-		// These are the defaults
+		// This is the default configuration
 		defParams.put("general.magicaltool", 58);
-		defParams.put("general.use_worldguard", "yes");
-		defParams.put("general.use_logblock", "yes");
-		defParams.put("general.debug", "yes");
-		defParams.put("blocks.logs", "yes");
-		defParams.put("blocks.stairs", "yes");
-		defParams.put("blocks.pistons", "yes");
-		defParams.put("blocks.chests", "yes");
-		defParams.put("blocks.slabs", "yes");
-		defParams.put("blocks.diodes", "yes");
-		defParams.put("general.testiparametri", 1);
+		defParams.put("general.use_worldguard", "true");
+		defParams.put("general.use_logblock", "true");
+		defParams.put("general.debug", "true");
+		defParams.put("blocks.logs", "true");
+		defParams.put("blocks.stairs", "true");
+		defParams.put("blocks.pistons", "false");
+		defParams.put("blocks.chests", "true");
+		defParams.put("blocks.slabs", "true");
+		defParams.put("blocks.diodes", "true");
 		
+		// If config does not include a default parameter, add it
 		for (final Entry<String, Object> e : defParams.entrySet())
 			if (!config.contains(e.getKey()))
-				config.addDefault(e.getKey(), e.getValue());
+				config.set(e.getKey(), e.getValue());
 		
-		// Add defaults for any params that don't exist in (existing) config.yml <<<=== THIS DOESN'T WORK
-		config.options().copyDefaults(true);
-		this.saveDefaultConfig();
+		// Save default values to config.yml in datadirectory
+		this.saveConfig();
+		
+		magicalTool = getConfig().getInt("general.magicaltool");
+		useWG = getConfig().getBoolean("general.use_worldguard");
+		useLB = getConfig().getBoolean("general.use_logblock");
+		debug = getConfig().getBoolean("general.debug");
+		rotateLogs = getConfig().getBoolean("blocks.logs");
+		rotateStairs = getConfig().getBoolean("blocks.stairs");
+		rotatePistons = getConfig().getBoolean("blocks.pistons");
+		rotateChests = getConfig().getBoolean("blocks.chests");
+		rotateSlabs = getConfig().getBoolean("blocks.slabs");
+		rotateDiodes = getConfig().getBoolean("blocks.diodes");
 	}
 	
 	// This is the block listener which cancels block damage when clicking with the magical tool
@@ -125,7 +121,6 @@ public class MagicTouch extends JavaPlugin {
 			if (event.isCancelled()) return;
 			
 			Player player = event.getPlayer();
-			// Block block = event.getBlock();
 			int itemInHand = player.getItemInHand().getTypeId();
 			
 			if (itemInHand == magicalTool) {
@@ -141,7 +136,7 @@ public class MagicTouch extends JavaPlugin {
 		
 		// Read configuration params from config.yml
 
-		@EventHandler
+		@EventHandler(priority = EventPriority.LOW)
 		public void onPlayerInteract(PlayerInteractEvent event) {
 			
 			if (event.isCancelled()) return;
@@ -308,7 +303,7 @@ public class MagicTouch extends JavaPlugin {
 				// N(0) -> E(1) -> S(2) -> W(3) -> N(0)...
 				} else if (rotateDiodes && (
 						  (material == Material.DIODE_BLOCK_OFF) ||
-						  (material == Material.DIODE_BLOCK_OFF))) {
+						  (material == Material.DIODE_BLOCK_ON))) {
 					validBlock = true;
 					byte data = block.getData();
 					block.setData((byte)((data + 1) % 4));
