@@ -15,6 +15,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockDamageEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -116,7 +117,7 @@ public class MagicTouch extends JavaPlugin {
 		private int magicalTool = getConfig().getInt("general.magicaltool");
 		
 		@EventHandler
-		public void onBlockDamage(BlockDamageEvent event) {
+		public void onBlockBreak(BlockBreakEvent event) {
 			
 			if (event.isCancelled()) return;
 			
@@ -124,6 +125,7 @@ public class MagicTouch extends JavaPlugin {
 			int itemInHand = player.getItemInHand().getTypeId();
 			
 			if (itemInHand == magicalTool) {
+				_log.info("BlockBreakEvent detected!");
 				event.setCancelled(true);
 			}
 		}
@@ -136,7 +138,7 @@ public class MagicTouch extends JavaPlugin {
 		
 		// Read configuration params from config.yml
 
-		@EventHandler(priority = EventPriority.LOW)
+		@EventHandler
 		public void onPlayerInteract(PlayerInteractEvent event) {
 			
 			if (event.isCancelled()) return;
