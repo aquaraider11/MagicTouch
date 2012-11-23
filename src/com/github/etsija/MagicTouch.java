@@ -1,6 +1,8 @@
 package com.github.etsija;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.logging.Logger;
@@ -12,11 +14,9 @@ import org.bukkit.block.Block;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.block.BlockDamageEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
@@ -114,7 +114,8 @@ public class MagicTouch extends JavaPlugin {
 	// This is the block listener which cancels block damage when clicking with the magical tool
 	public class bListener implements Listener {
 
-		private int magicalTool = getConfig().getInt("general.magicaltool");
+		//private int magicalTool = getConfig().getInt("general.magicaltool");
+		private List<String> brPlayersList = new ArrayList<String>();
 		
 		@EventHandler
 		public void onBlockBreak(BlockBreakEvent event) {
@@ -125,6 +126,7 @@ public class MagicTouch extends JavaPlugin {
 			int itemInHand = player.getItemInHand().getTypeId();
 			
 			if (itemInHand == magicalTool) {
+				
 				_log.info("BlockBreakEvent detected!");
 				event.setCancelled(true);
 			}
