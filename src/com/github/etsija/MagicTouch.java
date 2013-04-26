@@ -39,6 +39,7 @@ public class MagicTouch extends JavaPlugin {
 	private Boolean rotateChests;
 	private Boolean rotateSlabs;
 	private Boolean rotateDiodes;
+	private Boolean rotateHoppers;
 	
 	// Connect to WG plugin to respect build-restricted areas
 	private WorldGuardPlugin getWorldGuard() {
@@ -90,6 +91,7 @@ public class MagicTouch extends JavaPlugin {
 		defParams.put("blocks.chests", "true");
 		defParams.put("blocks.slabs", "true");
 		defParams.put("blocks.diodes", "true");
+		defParams.put("blocks.hoppers", "false");
 		
 		// If config does not include a default parameter, add it
 		for (final Entry<String, Object> e : defParams.entrySet())
@@ -109,13 +111,14 @@ public class MagicTouch extends JavaPlugin {
 		rotateChests = getConfig().getBoolean("blocks.chests");
 		rotateSlabs = getConfig().getBoolean("blocks.slabs");
 		rotateDiodes = getConfig().getBoolean("blocks.diodes");
+		rotateHoppers = getConfig().getBoolean("blocks.hoppers");
 	}
 	
 	// This is the block listener which cancels block damage when clicking with the magical tool
 	public class bListener implements Listener {
 
 		//private int magicalTool = getConfig().getInt("general.magicaltool");
-		private List<String> brPlayersList = new ArrayList<String>();
+		//private List<String> brPlayersList = new ArrayList<String>();
 		
 		@EventHandler
 		public void onBlockBreak(BlockBreakEvent event) {
@@ -182,8 +185,9 @@ public class MagicTouch extends JavaPlugin {
 				
 				// LOGS:
 				// U/D -> E/W -> N/S -> U/D...
-				if (rotateLogs && 
-				   (material == Material.LOG)) {
+				if (rotateLogs && ( 
+				   (material == Material.LOG) ||
+				   (material == Material.QUARTZ_BLOCK))) {
 					validBlock = true;
 					byte data = block.getData();
 					if (data < 4) {
@@ -206,7 +210,8 @@ public class MagicTouch extends JavaPlugin {
 						  (material == Material.SMOOTH_STAIRS) ||
 						  (material == Material.SANDSTONE_STAIRS) ||
 						  (material == Material.BRICK_STAIRS) ||
-						  (material == Material.NETHER_BRICK_STAIRS))) {
+						  (material == Material.NETHER_BRICK_STAIRS) ||
+						  (material == Material.QUARTZ_STAIRS))) {
 					validBlock = true;
 					byte data = block.getData();
                     int flipStatus = (data & 0x4) >> 2; // Save bit 3 (0x3)
@@ -273,6 +278,7 @@ public class MagicTouch extends JavaPlugin {
 				} else if (rotateChests && (
 						  (material == Material.CHEST) ||
 						  (material == Material.ENDER_CHEST) ||
+						  (material == Material.TRAPPED_CHEST) ||
 						  (material == Material.FURNACE) ||
 						  (material == Material.DISPENSER))) {
 					validBlock = true;
@@ -294,7 +300,8 @@ public class MagicTouch extends JavaPlugin {
 				
 				// SLABS:
 				// right-side up -> upside down -> ...
-				} else if (rotateSlabs && (material == Material.STEP)) {
+				} else if (rotateSlabs && (
+						  (material == Material.STEP))) {
 					validBlock = true;
 					byte data = block.getData();
 					if (data < 8) {
@@ -311,8 +318,35 @@ public class MagicTouch extends JavaPlugin {
 					validBlock = true;
 					byte data = block.getData();
 					block.setData((byte)((data + 1) % 4));
-				}				
 				
+				// HOPPERS:
+				// N(2) -> E(5) -> S(3) -> W(4) -> D(0) -> U(1) -> N(2)...
+				} else if (rotateHoppers && (
+						  (material == Material.HOPPER))) {
+					validBlock = true;
+					byte data = block.getData();
+					switch (data) {
+						case 2:
+							block.setData((byte) 5);
+							break;
+						case 5:
+							block.setData((byte) 3);
+							break;
+						case 3:
+							block.setData((byte) 4);
+							break;
+						case 4:
+							block.setData((byte) 0);
+							break;
+						case 0:
+							block.setData((byte) 1);
+							break;
+						case 1:
+							block.setData((byte) 2);
+							break;
+					}
+				}
+			
 				// LogBlock logging in use and Player has clicked a valid block to rotate
 				// so log your change with LogBlock
 				if (validBlock && useLB) {
