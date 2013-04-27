@@ -2,7 +2,7 @@ general:
   magicaltool: 58
   use_worldguard: true
   use_logblock: true
-  debug: true
+  debug: false
 blocks:
   logs: true
   stairs: true
@@ -10,3 +10,4 @@ blocks:
   chests: true
   slabs: true
   diodes: true
+  hoppers: false

@@ -1,8 +1,6 @@
 package com.github.etsija;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.logging.Logger;
@@ -84,7 +82,7 @@ public class MagicTouch extends JavaPlugin {
 		defParams.put("general.magicaltool", 58);
 		defParams.put("general.use_worldguard", "true");
 		defParams.put("general.use_logblock", "true");
-		defParams.put("general.debug", "true");
+		defParams.put("general.debug", "false");
 		defParams.put("blocks.logs", "true");
 		defParams.put("blocks.stairs", "true");
 		defParams.put("blocks.pistons", "false");
@@ -117,9 +115,6 @@ public class MagicTouch extends JavaPlugin {
 	// This is the block listener which cancels block damage when clicking with the magical tool
 	public class bListener implements Listener {
 
-		//private int magicalTool = getConfig().getInt("general.magicaltool");
-		//private List<String> brPlayersList = new ArrayList<String>();
-		
 		@EventHandler
 		public void onBlockBreak(BlockBreakEvent event) {
 			
