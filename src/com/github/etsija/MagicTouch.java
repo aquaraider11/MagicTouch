@@ -38,6 +38,7 @@ public class MagicTouch extends JavaPlugin {
 	private Boolean rotateSlabs;
 	private Boolean rotateDiodes;
 	private Boolean rotateHoppers;
+	private Boolean rotateQuartz;
 	
 	// Connect to WG plugin to respect build-restricted areas
 	private WorldGuardPlugin getWorldGuard() {
@@ -89,7 +90,8 @@ public class MagicTouch extends JavaPlugin {
 		defParams.put("blocks.chests", "true");
 		defParams.put("blocks.slabs", "true");
 		defParams.put("blocks.diodes", "true");
-		defParams.put("blocks.hoppers", "false");
+		defParams.put("blocks.hoppers", "true");
+		defParams.put("blocks.quartz", "true");
 		
 		// If config does not include a default parameter, add it
 		for (final Entry<String, Object> e : defParams.entrySet())
@@ -110,6 +112,7 @@ public class MagicTouch extends JavaPlugin {
 		rotateSlabs = getConfig().getBoolean("blocks.slabs");
 		rotateDiodes = getConfig().getBoolean("blocks.diodes");
 		rotateHoppers = getConfig().getBoolean("blocks.hoppers");
+		rotateQuartz = getConfig().getBoolean("blocks.quartz");
 	}
 	
 	// This is the block listener which cancels block damage when clicking with the magical tool
@@ -182,7 +185,7 @@ public class MagicTouch extends JavaPlugin {
 				// U/D -> E/W -> N/S -> U/D...
 				if (rotateLogs && ( 
 				   (material == Material.LOG) ||
-				   (material == Material.QUARTZ_BLOCK))) {
+				   (material == Material.LOG_2))) {
 					validBlock = true;
 					byte data = block.getData();
 					if (data < 4) {
@@ -201,6 +204,8 @@ public class MagicTouch extends JavaPlugin {
 						  (material == Material.SPRUCE_WOOD_STAIRS) ||
 						  (material == Material.BIRCH_WOOD_STAIRS) ||
 						  (material == Material.JUNGLE_WOOD_STAIRS) ||
+						  (material == Material.ACACIA_STAIRS) ||
+						  (material == Material.DARK_OAK_STAIRS) ||
 						  (material == Material.COBBLESTONE_STAIRS) ||
 						  (material == Material.SMOOTH_STAIRS) ||
 						  (material == Material.SANDSTONE_STAIRS) ||
@@ -268,14 +273,13 @@ public class MagicTouch extends JavaPlugin {
 					data = (byte) ((isExtended << 3) | orientation);
 					block.setData(data);
 		
-				// CHESTS, FURNACES, DISPENSERS:
+				// CHESTS, FURNACES:
 				// N(2) -> E(5) -> S(3) -> W(4) -> N(2)...
 				} else if (rotateChests && (
 						  (material == Material.CHEST) ||
 						  (material == Material.ENDER_CHEST) ||
 						  (material == Material.TRAPPED_CHEST) ||
-						  (material == Material.FURNACE) ||
-						  (material == Material.DISPENSER))) {
+						  (material == Material.FURNACE))) {
 					validBlock = true;
 					byte data = block.getData();
 					switch (data) {
@@ -296,7 +300,8 @@ public class MagicTouch extends JavaPlugin {
 				// SLABS:
 				// right-side up -> upside down -> ...
 				} else if (rotateSlabs && (
-						  (material == Material.STEP))) {
+						  (material == Material.STEP) ||
+						  (material == Material.WOOD_STEP))) {
 					validBlock = true;
 					byte data = block.getData();
 					if (data < 8) {
@@ -314,10 +319,12 @@ public class MagicTouch extends JavaPlugin {
 					byte data = block.getData();
 					block.setData((byte)((data + 1) % 4));
 				
-				// HOPPERS:
+				// HOPPERS, DISPENSERS, DROPPERS:
 				// N(2) -> E(5) -> S(3) -> W(4) -> D(0) -> U(1) -> N(2)...
 				} else if (rotateHoppers && (
-						  (material == Material.HOPPER))) {
+						  (material == Material.HOPPER) ||
+						  (material == Material.DISPENSER) ||
+						  (material == Material.DROPPER))) {
 					validBlock = true;
 					byte data = block.getData();
 					switch (data) {
@@ -339,6 +346,24 @@ public class MagicTouch extends JavaPlugin {
 						case 1:
 							block.setData((byte) 2);
 							break;
+					}
+				
+				// QUARTZ PILLARS:
+				// U/D -> N/S -> E/W -> U/D...
+				} else if (rotateQuartz && 
+						  (material == Material.QUARTZ_BLOCK)) {
+					validBlock = true;
+					byte data = block.getData();
+					switch (data) {
+					case 2:
+						block.setData((byte) 3);
+						break;
+					case 3:
+						block.setData((byte) 4);
+						break;
+					case 4:
+						block.setData((byte) 2);
+						break;
 					}
 				}
 			

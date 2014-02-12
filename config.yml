@@ -10,4 +10,4 @@ blocks:
   chests: true
   slabs: true
   diodes: true
-  hoppers: false
+  hoppers: true
