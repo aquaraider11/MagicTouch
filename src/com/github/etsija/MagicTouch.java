@@ -128,7 +128,7 @@ public class MagicTouch extends JavaPlugin {
 			
 			if (itemInHand == magicalTool) {
 				
-				_log.info("BlockBreakEvent detected!");
+				//_log.info("BlockBreakEvent detected!");
 				event.setCancelled(true);
 			}
 		}
